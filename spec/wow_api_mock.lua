@@ -145,6 +145,9 @@ function strsplit(delim, str)
     return str, nil
 end
 function strtrim(str) return str and str:match("^%s*(.-)%s*$") or "" end
+
+-- WoW extends the string metatable with :trim()
+string.trim = function(s) return strtrim(s) end
 function CreateAtlasMarkup(atlas, height, width)
     return "|A:" .. atlas .. ":" .. (height or 0) .. ":" .. (width or 0) .. "|a"
 end

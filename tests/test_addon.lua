@@ -93,10 +93,14 @@ UnitName = function() return "TestPlayer" end
 GetRealmName = function() return "TestRealm" end
 function strsplit(d, s) local p = s:find(d); if p then return s:sub(1, p-1), s:sub(p+1) end; return s, nil end
 function strtrim(s) return s and s:match("^%s*(.-)%s*$") or "" end
+string.trim = function(s) return strtrim(s) end
+function CreateAtlasMarkup(atlas, height, width)
+    return "|A:" .. atlas .. ":" .. (height or 0) .. ":" .. (width or 0) .. "|a"
+end
 
--- Load addon
+-- Load addon (pass addon name and namespace table, simulating WoW's vararg loader)
 print("Loading CraftingOrderHelper...")
-dofile("CraftingOrderHelper.lua")
+loadfile("CraftingOrderHelper.lua")("CraftingOrderHelper", {})
 
 print("\n=== CraftingOrderHelper Tests ===\n")
 

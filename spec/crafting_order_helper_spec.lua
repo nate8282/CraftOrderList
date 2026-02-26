@@ -6,7 +6,7 @@ describe("CraftingOrderHelper", function()
 
     setup(function()
         MockData = _G.MockData
-        dofile("CraftingOrderHelper.lua")
+        loadfile("CraftingOrderHelper.lua")("CraftingOrderHelper", {})
     end)
 
     before_each(function()

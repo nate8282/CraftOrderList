@@ -53,6 +53,11 @@ read_globals = {
     -- Font objects
     "GameFontNormalSmall",
 
+    -- Named frames (created by CreateFrame with a global name)
+    "COH_QualityDropdown",
+    "COH_SortDropdown",
+    "COH_HideCompleted",
+
     -- Dropdown API
     "UIDropDownMenu_Initialize",
     "UIDropDownMenu_SetWidth",

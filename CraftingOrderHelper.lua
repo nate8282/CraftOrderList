@@ -19,7 +19,6 @@ COH.settings = {
 }
 
 local MAX_ITEMS = 40
-local QUALITY_NAMES = { [0] = "Any", [1] = "Rank 1", [2] = "Rank 2", [3] = "Rank 3" }
 local QUALITY_ICONS = {
     [0] = "Any",
     [1] = CreateAtlasMarkup("Professions-Icon-Quality-Tier1-Small", 20, 20),
