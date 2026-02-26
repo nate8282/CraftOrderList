@@ -145,6 +145,9 @@ function strsplit(delim, str)
     return str, nil
 end
 function strtrim(str) return str and str:match("^%s*(.-)%s*$") or "" end
+function CreateAtlasMarkup(atlas, height, width)
+    return "|A:" .. atlas .. ":" .. (height or 0) .. ":" .. (width or 0) .. "|a"
+end
 
 -- System stubs
 C_Timer = {

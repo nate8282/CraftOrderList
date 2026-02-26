@@ -2,7 +2,7 @@
 ## Title: Crafting Order Helper
 ## Notes: Visual shopping list for crafting materials. Shows what you need, what you have, and lets you search the AH.
 ## Author: Nate8282
-## Version: 1.0.0
+## Version: 1.1.0
 ## SavedVariables: COH_SavedData
 
 CraftingOrderHelper.lua

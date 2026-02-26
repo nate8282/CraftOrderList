@@ -65,6 +65,7 @@ read_globals = {
 
     -- Utility
     "C_Timer",
+    "CreateAtlasMarkup",
     "strsplit",
     "strtrim",
 }
@@ -83,7 +84,7 @@ files["spec/**"] = {
         "UIDropDownMenu_Initialize", "UIDropDownMenu_SetWidth",
         "UIDropDownMenu_SetText", "UIDropDownMenu_CreateInfo",
         "UIDropDownMenu_AddButton",
-        "strsplit", "strtrim",
+        "strsplit", "strtrim", "CreateAtlasMarkup",
         "C_Timer", "C_AddOns", "SlashCmdList",
         "COH_SavedData", "MockData",
     },
@@ -116,7 +117,7 @@ files["tests/**"] = {
         "UIDropDownMenu_Initialize", "UIDropDownMenu_SetWidth",
         "UIDropDownMenu_SetText", "UIDropDownMenu_CreateInfo",
         "UIDropDownMenu_AddButton",
-        "strsplit", "strtrim",
+        "strsplit", "strtrim", "CreateAtlasMarkup",
         "C_Timer", "C_AddOns", "SlashCmdList",
         "COH_SavedData",
     },
