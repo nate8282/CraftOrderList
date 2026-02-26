@@ -17,10 +17,22 @@ local MockData = {
 }
 
 -- Frame mock with chainable method stubs
-local frameMT = {
+-- __index returns a callable table so f.Foo returns something that is both
+-- indexable (f.Text:SetPoint works) and callable (f:SetPoint() works).
+local frameMT
+frameMT = {
     __index = function(t, k)
-        return function() return t end
-    end
+        -- Return a new mock sub-object that is both callable and indexable
+        local child = setmetatable({}, {
+            __call = function() return t end,
+            __index = function(_, k2)
+                return function() return t end
+            end,
+        })
+        rawset(t, k, child)
+        return child
+    end,
+    __call = function(t) return t end,
 }
 local function mockFrame(frameName)
     local f = setmetatable({

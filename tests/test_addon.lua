@@ -21,11 +21,20 @@ local function assertEqual(a, b) assert(a == b, "Expected " .. tostring(b) .. ",
 local function assertNotNil(a) assert(a ~= nil, "Expected non-nil") end
 local function assertTrue(a) assert(a, "Expected true") end
 
--- Frame mock
-local frameMT = {
+-- Frame mock (returns callable+indexable sub-objects for chaining)
+local frameMT
+frameMT = {
     __index = function(t, k)
-        return function() return t end
-    end
+        local child = setmetatable({}, {
+            __call = function() return t end,
+            __index = function(_, k2)
+                return function() return t end
+            end,
+        })
+        rawset(t, k, child)
+        return child
+    end,
+    __call = function(t) return t end,
 }
 local function mockFrame(name)
     local f = setmetatable({
