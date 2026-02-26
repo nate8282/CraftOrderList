@@ -9,7 +9,7 @@ exclude_files = {
 }
 
 ignore = {
-    "11./SLASH_.*",     -- Slash command globals (SLASH_CRAFTINGORDERHELPER1, etc.)
+    "11./SLASH_.*",     -- Slash command globals (SLASH_COH1, etc.)
     "11./BINDING_.*",   -- Keybinding globals
     "212",              -- Unused arguments (WoW callbacks have fixed signatures)
     "432",              -- Shadowing upvalue 'self' (intentional in WoW SetScript callbacks and method defs)
@@ -17,26 +17,48 @@ ignore = {
 
 -- Globals the addon WRITES to
 globals = {
-    "CraftingOrderHelper",
-    "CraftingOrderHelperSettings",
+    "COH_SavedData",
     "SlashCmdList",
     "UISpecialFrames",
 }
 
 -- WoW API functions the addon READS (organized by category)
--- NOTE: Update this list as you add new WoW API calls to the addon
 read_globals = {
     -- Frame system
     "CreateFrame",
     "UIParent",
+    "ChatFrame1EditBox",
 
-    -- Player info
-    "UnitName",
-    "GetRealmName",
+    -- Item API
+    "C_Item",
 
-    -- Profession / Trade Skill API
-    "GetProfessions",
-    "GetProfessionInfo",
+    -- Trade Skill / Professions API
+    "C_TradeSkillUI",
+    "ProfessionsFrame",
+    "ProfessionsCustomerOrdersFrame",
+
+    -- Auction House
+    "AuctionHouseFrame",
+
+    -- Enum
+    "Enum",
+
+    -- Tooltip
+    "GameTooltip",
+
+    -- Minimap
+    "Minimap",
+    "GetCursorPosition",
+
+    -- Font objects
+    "GameFontNormalSmall",
+
+    -- Dropdown API
+    "UIDropDownMenu_Initialize",
+    "UIDropDownMenu_SetWidth",
+    "UIDropDownMenu_SetText",
+    "UIDropDownMenu_CreateInfo",
+    "UIDropDownMenu_AddButton",
 
     -- Addon metadata
     "C_AddOns",
@@ -51,11 +73,19 @@ read_globals = {
 files["spec/**"] = {
     globals = {
         "CreateFrame", "UIParent", "UISpecialFrames",
-        "UnitName", "GetRealmName",
-        "GetProfessions", "GetProfessionInfo",
+        "ChatFrame1EditBox",
+        "C_Item", "C_TradeSkillUI",
+        "ProfessionsFrame", "ProfessionsCustomerOrdersFrame",
+        "AuctionHouseFrame",
+        "Enum", "GameTooltip",
+        "Minimap", "GetCursorPosition",
+        "GameFontNormalSmall",
+        "UIDropDownMenu_Initialize", "UIDropDownMenu_SetWidth",
+        "UIDropDownMenu_SetText", "UIDropDownMenu_CreateInfo",
+        "UIDropDownMenu_AddButton",
         "strsplit", "strtrim",
         "C_Timer", "C_AddOns", "SlashCmdList",
-        "CraftingOrderHelper", "CraftingOrderHelperSettings", "MockData",
+        "COH_SavedData", "MockData",
     },
     ignore = {
         "211",  -- Unused local variable (mock data)
@@ -76,11 +106,19 @@ files["spec/**"] = {
 files["tests/**"] = {
     globals = {
         "CreateFrame", "UIParent", "UISpecialFrames",
-        "UnitName", "GetRealmName",
-        "GetProfessions", "GetProfessionInfo",
+        "ChatFrame1EditBox",
+        "C_Item", "C_TradeSkillUI",
+        "ProfessionsFrame", "ProfessionsCustomerOrdersFrame",
+        "AuctionHouseFrame",
+        "Enum", "GameTooltip",
+        "Minimap", "GetCursorPosition",
+        "GameFontNormalSmall",
+        "UIDropDownMenu_Initialize", "UIDropDownMenu_SetWidth",
+        "UIDropDownMenu_SetText", "UIDropDownMenu_CreateInfo",
+        "UIDropDownMenu_AddButton",
         "strsplit", "strtrim",
         "C_Timer", "C_AddOns", "SlashCmdList",
-        "CraftingOrderHelper", "CraftingOrderHelperSettings",
+        "COH_SavedData",
     },
     ignore = { "211", "212", "213", "311" },
     read_globals = { "dofile", "setmetatable", "os" },

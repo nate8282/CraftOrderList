@@ -1,9 +1,9 @@
 ## Interface: 120001
 ## Title: Crafting Order Helper
-## Notes: Helps manage and track crafting orders.
+## Notes: Visual shopping list for crafting materials. Shows what you need, what you have, and lets you search the AH.
 ## Author: Nate8282
 ## Version: 1.0.0
-## SavedVariables: CraftingOrderHelperSettings
+## SavedVariables: COH_SavedData
 
 CraftingOrderHelper.lua
 

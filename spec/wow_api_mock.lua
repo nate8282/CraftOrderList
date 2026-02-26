@@ -5,6 +5,12 @@ local MockData = {
     player = { name = "Kaelen", realm = "Sargeras" },
     professions = { [1] = { name = "Leatherworking" }, [2] = { name = "Skinning" } },
     registeredEvents = {},
+    itemCounts = {},
+    itemNames = {},
+    itemIcons = {},
+    recipeInfos = {},
+    recipeSchematics = {},
+    tooltipLines = {},
 }
 
 -- Frame mock with chainable method stubs
@@ -35,18 +41,90 @@ local function mockFrame(frameName)
     f.UnregisterEvent = function(self, event)
         MockData.registeredEvents[event] = nil
     end
+    f.RegisterForDrag = function() end
+    f.RegisterForClicks = function() end
+    f.IsShown = function() return false end
+    f.IsVisible = function() return false end
+    f.GetWidth = function() return 300 end
+    f.GetHeight = function() return 400 end
+    f.GetCenter = function() return 400, 300 end
+    f.GetPoint = function() return "CENTER", nil, "CENTER", 0, 0 end
+    f.GetEffectiveScale = function() return 1 end
     return f
 end
 
 -- Core WoW frame/UI globals
-function CreateFrame(frameType, frameName)
+function CreateFrame(frameType, frameName, parent, template)
     return mockFrame(frameName)
 end
 UIParent = mockFrame("UIParent")
 UIParent.GetScale = function() return 1 end
+UIParent.GetEffectiveScale = function() return 1 end
 
--- Special frames table for ESC-to-close
 UISpecialFrames = {}
+ChatFrame1EditBox = mockFrame("ChatFrame1EditBox")
+ChatFrame1EditBox.IsShown = function() return false end
+
+Minimap = mockFrame("Minimap")
+Minimap.GetCenter = function() return 400, 300 end
+Minimap.GetWidth = function() return 140 end
+
+function GetCursorPosition() return 400, 300 end
+
+-- Dropdown menu API stubs
+function UIDropDownMenu_Initialize() end
+function UIDropDownMenu_SetWidth() end
+function UIDropDownMenu_SetText() end
+function UIDropDownMenu_CreateInfo() return {} end
+function UIDropDownMenu_AddButton() end
+
+-- GameTooltip mock
+GameTooltip = mockFrame("GameTooltip")
+GameTooltip.AddLine = function(self, text)
+    table.insert(MockData.tooltipLines, text or "")
+end
+GameTooltip.Show = function() end
+
+-- Font object stubs
+GameFontNormalSmall = {}
+
+-- C_Item mock
+C_Item = {
+    GetItemCount = function(itemID, includeBank, includeUses, includeReagentBank)
+        return MockData.itemCounts[itemID] or 0
+    end,
+    GetItemNameByID = function(itemID)
+        return MockData.itemNames[itemID] or ("Item_" .. tostring(itemID))
+    end,
+    GetItemIconByID = function(itemID)
+        return MockData.itemIcons[itemID] or 134400
+    end,
+    RequestLoadItemDataByID = function() end,
+}
+
+-- C_TradeSkillUI mock
+C_TradeSkillUI = {
+    GetRecipeInfo = function(recipeID)
+        return MockData.recipeInfos[recipeID]
+    end,
+    GetRecipeSchematic = function(recipeID, isRecraft)
+        return MockData.recipeSchematics[recipeID]
+    end,
+}
+
+-- Enum mock
+Enum = {
+    CraftingReagentType = {
+        Basic = 0,
+        Optional = 1,
+        Finishing = 2,
+    },
+}
+
+-- Blizzard frame stubs (not loaded by default in tests)
+ProfessionsFrame = nil
+ProfessionsCustomerOrdersFrame = nil
+AuctionHouseFrame = nil
 
 -- Player info
 function UnitName(unit)
@@ -56,7 +134,9 @@ function GetRealmName() return MockData.player.realm end
 
 -- Profession info
 function GetProfessions() return 1, 2, nil, nil, nil end
-function GetProfessionInfo(i) return MockData.professions[i].name, 0, 100, 100, 0, 0, i, 0, 0, 0, MockData.professions[i].name end
+function GetProfessionInfo(i)
+    return MockData.professions[i].name, 0, 100, 100, 0, 0, i, 0, 0, 0, MockData.professions[i].name
+end
 
 -- WoW utility functions
 function strsplit(delim, str)
