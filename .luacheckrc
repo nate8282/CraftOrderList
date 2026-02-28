@@ -20,6 +20,12 @@ globals = {
     "COL_SavedData",
     "SlashCmdList",
     "UISpecialFrames",
+    -- COH-015: keybinding display strings and global wrappers
+    "BINDING_HEADER_CRAFTORDERLIST",
+    "BINDING_NAME_COLTOGGLEMAIN",
+    "BINDING_NAME_COLSEARCHNEXT",
+    "COL_ToggleFrame",
+    "COL_SearchNextMaterial",
 }
 
 -- WoW API functions the addon READS (organized by category)
@@ -57,6 +63,9 @@ read_globals = {
     "COL_QualityDropdown",
     "COL_SortDropdown",
     "COL_HideCompleted",
+    "COL_RecentDropdown",   -- COH-008
+    -- COH-009: screen notification frame
+    "UIErrorsFrame",
 
     -- Dropdown API
     "UIDropDownMenu_Initialize",
@@ -92,6 +101,14 @@ files["spec/**"] = {
         "strsplit", "strtrim", "CreateAtlasMarkup",
         "C_Timer", "C_AddOns", "SlashCmdList",
         "COL_SavedData", "MockData",
+        -- COH-008/009/015: new globals set by addon at load time
+        "UIErrorsFrame",
+        "COL_RecentDropdown",
+        "COL_ToggleFrame",
+        "COL_SearchNextMaterial",
+        "BINDING_HEADER_CRAFTORDERLIST",
+        "BINDING_NAME_COLTOGGLEMAIN",
+        "BINDING_NAME_COLSEARCHNEXT",
     },
     ignore = {
         "211",  -- Unused local variable (mock data)
@@ -125,6 +142,14 @@ files["tests/**"] = {
         "strsplit", "strtrim", "CreateAtlasMarkup",
         "C_Timer", "C_AddOns", "SlashCmdList",
         "COL_SavedData",
+        -- COH-008/009/015: new globals set by addon at load time
+        "UIErrorsFrame",
+        "COL_RecentDropdown",
+        "COL_ToggleFrame",
+        "COL_SearchNextMaterial",
+        "BINDING_HEADER_CRAFTORDERLIST",
+        "BINDING_NAME_COLTOGGLEMAIN",
+        "BINDING_NAME_COLSEARCHNEXT",
     },
     ignore = { "211", "212", "213", "311" },
     read_globals = { "dofile", "setmetatable", "os" },

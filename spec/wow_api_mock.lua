@@ -115,6 +115,17 @@ C_Item = {
         return MockData.itemIcons[itemID] or 134400
     end,
     RequestLoadItemDataByID = function() end,
+    -- COH-011/COH-013: returns itemType, subType for source classification
+    GetItemInfoInstant = function(itemID)
+        local info = MockData.itemInfoInstant and MockData.itemInfoInstant[itemID]
+        if info then return info.id, info.itemType, info.subType end
+        return itemID, "Trade Goods", "Miscellaneous"
+    end,
+}
+
+-- COH-009: UIErrorsFrame mock
+UIErrorsFrame = {
+    AddMessage = function(self, text, r, g, b, opacity, duration) end,
 }
 
 -- C_TradeSkillUI mock

@@ -1,0 +1,8 @@
+<Bindings>
+    <Binding name="COLTOGGLEMAIN" description="Toggle Materials List" header="CRAFTORDERLIST" runOnUp="false">
+        COL_ToggleFrame()
+    </Binding>
+    <Binding name="COLSEARCHNEXT" description="Search Next Material" runOnUp="false">
+        COL_SearchNextMaterial()
+    </Binding>
+</Bindings>
