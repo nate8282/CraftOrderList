@@ -63,9 +63,14 @@ read_globals = {
     "COL_QualityDropdown",
     "COL_SortDropdown",
     "COL_HideCompleted",
-    "COL_RecentDropdown",   -- COH-008
+    "COL_RecentDropdown",      -- COH-008
     -- COH-009: screen notification frame
     "UIErrorsFrame",
+    -- COH-016/017/018: new named frames
+    "COL_CopyBox",
+    "COL_HideMinimapCheck",
+    "COL_AHDockCheck",
+    "COL_SettingsFrame",
 
     -- Dropdown API
     "UIDropDownMenu_Initialize",
@@ -109,6 +114,11 @@ files["spec/**"] = {
         "BINDING_HEADER_CRAFTORDERLIST",
         "BINDING_NAME_COLTOGGLEMAIN",
         "BINDING_NAME_COLSEARCHNEXT",
+        -- COH-016/017/018: new named frames
+        "COL_CopyBox",
+        "COL_HideMinimapCheck",
+        "COL_AHDockCheck",
+        "COL_SettingsFrame",
     },
     ignore = {
         "211",  -- Unused local variable (mock data)
@@ -150,6 +160,11 @@ files["tests/**"] = {
         "BINDING_HEADER_CRAFTORDERLIST",
         "BINDING_NAME_COLTOGGLEMAIN",
         "BINDING_NAME_COLSEARCHNEXT",
+        -- COH-016/017/018: new named frames
+        "COL_CopyBox",
+        "COL_HideMinimapCheck",
+        "COL_AHDockCheck",
+        "COL_SettingsFrame",
     },
     ignore = { "211", "212", "213", "311" },
     read_globals = { "dofile", "setmetatable", "os" },

@@ -31,6 +31,8 @@ COL.settings = {
     sortBy        = "name",
     craftCount    = 1,
     framePos      = nil,
+    minimapHidden = false,   -- COH-017
+    ahAutoDock    = true,    -- COH-018
 }
 
 -- COH-009: one-shot completion notification flag (reset on each new list load)
@@ -329,8 +331,9 @@ local function CreateMainFrame()
     if COL.mainFrame then return COL.mainFrame end
 
     -- COH-008: Recent row added at y=-68; all controls below shift down 34px. Frame 460->494.
+    -- COH-016/018: Frame widened to 400px to fit 6 bottom buttons (Export + Import).
     local frame = CreateFrame("Frame", "COL_MainFrame", UIParent, "BackdropTemplate")
-    frame:SetSize(360, 494)
+    frame:SetSize(400, 494)
     frame:SetPoint("CENTER", UIParent, "CENTER", 400, 0)
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -377,9 +380,24 @@ local function CreateMainFrame()
     title:SetTextColor(unpack(COLORS.header))
 
     local version = titleBar:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    version:SetPoint("RIGHT", -26, 0)
+    version:SetPoint("RIGHT", -106, 0)
     version:SetText("v" .. (C_AddOns.GetAddOnMetadata(addonName, "Version") or ""))
     version:SetTextColor(0.5, 0.5, 0.5)
+
+    -- COH-018: Settings button in title bar
+    local settingsBtn = CreateFrame("Button", nil, titleBar, "UIPanelButtonTemplate")
+    settingsBtn:SetSize(68, 22)
+    settingsBtn:SetPoint("RIGHT", titleBar, "RIGHT", -34, 0)
+    settingsBtn:SetText("Settings")
+    settingsBtn:SetScript("OnClick", function()
+        if COL.settingsFrame then
+            if COL.settingsFrame:IsShown() then
+                COL.settingsFrame:Hide()
+            else
+                COL.settingsFrame:Show()
+            end
+        end
+    end)
 
     local closeBtn = CreateFrame("Button", nil, titleBar, "UIPanelCloseButton")
     closeBtn:SetPoint("RIGHT", 0, 0)
@@ -574,7 +592,7 @@ local function CreateMainFrame()
     scrollFrame:SetPoint("BOTTOMRIGHT", -28, 60)
 
     local content = CreateFrame("Frame", nil, scrollFrame)
-    content:SetWidth(324)
+    content:SetWidth(364)
     content:SetHeight(1)
     scrollFrame:SetScrollChild(content)
     frame.content     = content
@@ -588,10 +606,10 @@ local function CreateMainFrame()
     summary:SetTextColor(0.7, 0.7, 0.7)
     frame.summary = summary
 
-    -- Bottom buttons (COH-010: Clear/Copy/Reset/Search resized; Export added)
-    -- Total used: 60+4+60+4+60+4+80+4+60 = 336px (within 344px usable width)
+    -- Bottom buttons (COH-016: Import added; frame widened to 400px)
+    -- Total: 55+4+55+4+55+4+86+4+57+4+56 = 384px (exact usable width at 400px frame)
     local clearBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    clearBtn:SetSize(60, 22)
+    clearBtn:SetSize(55, 22)
     clearBtn:SetPoint("BOTTOMLEFT", 8, 8)
     clearBtn:SetText("Clear")
     clearBtn.confirmPending = false
@@ -624,7 +642,7 @@ local function CreateMainFrame()
     clearBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     local copyBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    copyBtn:SetSize(60, 22)
+    copyBtn:SetSize(55, 22)
     copyBtn:SetPoint("LEFT", clearBtn, "RIGHT", 4, 0)
     copyBtn:SetText("Copy")
     copyBtn:SetScript("OnClick", function() COL:CopyListToChat() end)
@@ -637,7 +655,7 @@ local function CreateMainFrame()
     copyBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     local uncheckBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    uncheckBtn:SetSize(60, 22)
+    uncheckBtn:SetSize(55, 22)
     uncheckBtn:SetPoint("LEFT", copyBtn, "RIGHT", 4, 0)
     uncheckBtn:SetText("Reset")
     uncheckBtn:SetScript("OnClick", function()
@@ -656,7 +674,7 @@ local function CreateMainFrame()
     uncheckBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     local searchNextBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    searchNextBtn:SetSize(88, 22)
+    searchNextBtn:SetSize(86, 22)
     searchNextBtn:SetPoint("LEFT", uncheckBtn, "RIGHT", 4, 0)
     searchNextBtn:SetText("Search Next")
     searchNextBtn:SetScript("OnClick", function() COL:SearchNextMaterial() end)
@@ -669,24 +687,101 @@ local function CreateMainFrame()
     searchNextBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
     frame.searchNextBtn = searchNextBtn
 
-    -- COH-010: Export button
+    -- COH-010/016: Export + Import buttons
     local exportBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    exportBtn:SetSize(60, 22)
+    exportBtn:SetSize(57, 22)
     exportBtn:SetPoint("LEFT", searchNextBtn, "RIGHT", 4, 0)
     exportBtn:SetText("Export")
     exportBtn:SetScript("OnClick", function() COL:ExportList() end)
     exportBtn:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:SetText("Export List", 1, 1, 1)
-        GameTooltip:AddLine("Copies an importable export string.", 0.7, 0.7, 0.7, true)
-        GameTooltip:AddLine("Use /col import <string> to restore.", 0.7, 0.7, 0.7, true)
+        GameTooltip:AddLine("Copies a shareable export string (Ctrl+C).", 0.7, 0.7, 0.7, true)
         GameTooltip:Show()
     end)
     exportBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
+    -- COH-016: Import button
+    local importBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    importBtn:SetSize(56, 22)
+    importBtn:SetPoint("LEFT", exportBtn, "RIGHT", 4, 0)
+    importBtn:SetText("Import")
+    importBtn:SetScript("OnClick", function() COL:ShowImportDialog() end)
+    importBtn:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:SetText("Import List", 1, 1, 1)
+        GameTooltip:AddLine("Restore a material list from an export string.", 0.7, 0.7, 0.7, true)
+        GameTooltip:Show()
+    end)
+    importBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
     frame:Hide()
     COL.mainFrame = frame
     return frame
+end
+
+-- ============================================================================
+-- Settings Panel (COH-018)
+-- ============================================================================
+
+local function CreateSettingsPanel()
+    local sf = CreateFrame("Frame", "COL_SettingsFrame", COL.mainFrame, "BackdropTemplate")
+    sf:SetSize(220, 90)
+    sf:SetPoint("TOPLEFT", COL.mainFrame, "TOPRIGHT", 5, 0)
+    sf:SetFrameStrata("HIGH")
+    sf:SetClampedToScreen(true)
+    sf:SetBackdrop({
+        bgFile   = "Interface/Tooltips/UI-Tooltip-Background",
+        edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+        edgeSize = 16,
+        insets   = { left = 4, right = 4, top = 4, bottom = 4 },
+    })
+    sf:SetBackdropColor(0.1, 0.1, 0.1, 1)
+    sf:SetBackdropBorderColor(0.6, 0.6, 0.6, 1)
+
+    local sfBg = sf:CreateTexture(nil, "BACKGROUND")
+    sfBg:SetPoint("TOPLEFT",     4, -4)
+    sfBg:SetPoint("BOTTOMRIGHT", -4,  4)
+    sfBg:SetColorTexture(0.1, 0.1, 0.1, 1)
+
+    local sfTitle = sf:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    sfTitle:SetPoint("TOPLEFT", 10, -8)
+    sfTitle:SetText("Settings")
+    sfTitle:SetTextColor(1, 0.82, 0)
+
+    local sfClose = CreateFrame("Button", nil, sf, "UIPanelCloseButton")
+    sfClose:SetPoint("TOPRIGHT", 4, 4)
+    sfClose:SetScript("OnClick", function() sf:Hide() end)
+
+    -- COH-017: Hide minimap button toggle
+    local hideMapCheck = CreateFrame("CheckButton", "COL_HideMinimapCheck", sf, "UICheckButtonTemplate")
+    hideMapCheck:SetSize(24, 24)
+    hideMapCheck:SetPoint("TOPLEFT", sf, "TOPLEFT", 8, -26)
+    hideMapCheck.text:SetText("Hide minimap button")
+    hideMapCheck.text:SetTextColor(0.7, 0.7, 0.7)
+    hideMapCheck:SetScript("OnClick", function(self)
+        COL.settings.minimapHidden = self:GetChecked()
+        if COL.minimapButton then
+            if COL.settings.minimapHidden then
+                COL.minimapButton:Hide()
+            else
+                COL.minimapButton:Show()
+            end
+        end
+    end)
+
+    -- COH-018: Auto-dock to AH toggle
+    local ahDockCheck = CreateFrame("CheckButton", "COL_AHDockCheck", sf, "UICheckButtonTemplate")
+    ahDockCheck:SetSize(24, 24)
+    ahDockCheck:SetPoint("TOPLEFT", sf, "TOPLEFT", 8, -52)
+    ahDockCheck.text:SetText("Auto-dock to AH")
+    ahDockCheck.text:SetTextColor(0.7, 0.7, 0.7)
+    ahDockCheck:SetScript("OnClick", function(self)
+        COL.settings.ahAutoDock = self:GetChecked()
+    end)
+
+    sf:Hide()
+    COL.settingsFrame = sf
 end
 
 -- ============================================================================
@@ -1102,17 +1197,38 @@ function COL:ExportList()
         eb:SetPoint("TOP", 0, -100)
         eb:SetAutoFocus(true)
         eb:SetScript("OnEscapePressed", function(self) self:Hide() end)
-        eb:SetScript("OnEnterPressed",  function(self) self:Hide() end)
         eb:Hide()
         COL.editBox = eb
     end
 
+    COL.editBox:SetScript("OnEnterPressed", function(self) self:Hide() end)
     COL.editBox:SetText(exportStr)
     COL.editBox:Show()
     COL.editBox:HighlightText()
     COL.editBox:SetFocus()
-    print("|cFFFFCC00COL:|r Press Ctrl+C to copy export string, then Escape to close.")
-    print("|cFFFFCC00COL:|r Use /col import <string> to restore on any character.")
+    print("|cFFFFCC00COL:|r Press Ctrl+C to copy, then Escape to close.")
+end
+
+-- COH-016: Show the import EditBox (empty, ready for paste)
+function COL:ShowImportDialog()
+    if not COL.editBox then
+        local eb = CreateFrame("EditBox", "COL_CopyBox", UIParent, "InputBoxTemplate")
+        eb:SetSize(400, 30)
+        eb:SetPoint("TOP", 0, -100)
+        eb:SetAutoFocus(true)
+        eb:SetScript("OnEscapePressed", function(self) self:Hide() end)
+        eb:Hide()
+        COL.editBox = eb
+    end
+    COL.editBox:SetText("")
+    COL.editBox:SetScript("OnEnterPressed", function(self)
+        local text = self:GetText():trim()
+        if text ~= "" then COL:ImportList(text) end
+        self:Hide()
+    end)
+    COL.editBox:Show()
+    COL.editBox:SetFocus()
+    print("|cFFFFCC00COL:|r Paste your export string and press Enter.")
 end
 
 -- COH-010: Import a list from an export string
@@ -1185,6 +1301,7 @@ end
 
 function COL:DockToAuctionHouse()
     if not COL.mainFrame or not AuctionHouseFrame then return end
+    if not COL.settings.ahAutoDock then return end   -- COH-018
     if COL.settings.framePos then return end
 
     COL.mainFrame:ClearAllPoints()
@@ -1270,6 +1387,7 @@ local function CreateMinimapButton()
 
     UpdatePosition()
     COL.minimapButton = btn
+    if COL.settings.minimapHidden then btn:Hide() end   -- COH-017
 end
 
 -- ============================================================================
@@ -1463,6 +1581,8 @@ local function LoadSettings()
     if type(COL.settings.hideCompleted) ~= "boolean" then
         COL.settings.hideCompleted = false
     end
+    if type(COL.settings.minimapHidden) ~= "boolean" then COL.settings.minimapHidden = false end
+    if type(COL.settings.ahAutoDock)    ~= "boolean" then COL.settings.ahAutoDock    = true  end
 
     if COL_SavedData.materialList and #COL_SavedData.materialList > 0 then
         COL.materialList = COL_SavedData.materialList
@@ -1484,6 +1604,8 @@ local function SaveSettings()
             craftCount     = COL.settings.craftCount,
             framePos       = COL.settings.framePos,
             minimapAngle   = COL.settings.minimapAngle,
+            minimapHidden  = COL.settings.minimapHidden,   -- COH-017
+            ahAutoDock     = COL.settings.ahAutoDock,      -- COH-018
         },
         materialList  = COL.materialList,
         recipeName    = COL.recipeName,
@@ -1511,6 +1633,22 @@ local function ApplySettings()
         COL.mainFrame:ClearAllPoints()
         COL.mainFrame:SetPoint(pos[1], UIParent, pos[2], pos[3], pos[4])
     end
+
+    -- COH-017/018: sync settings panel checkboxes
+    if COL_HideMinimapCheck then
+        COL_HideMinimapCheck:SetChecked(COL.settings.minimapHidden)
+    end
+    if COL_AHDockCheck then
+        COL_AHDockCheck:SetChecked(COL.settings.ahAutoDock)
+    end
+    -- COH-017: apply minimap visibility
+    if COL.minimapButton then
+        if COL.settings.minimapHidden then
+            COL.minimapButton:Hide()
+        else
+            COL.minimapButton:Show()
+        end
+    end
 end
 
 -- ============================================================================
@@ -1537,6 +1675,7 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
             LoadSettings()
             CreateMainFrame()
             CreateMinimapButton()
+            CreateSettingsPanel()   -- COH-018
             ApplySettings()
             COL:UpdateMainFrame()
             print("|cFFFFCC00CraftOrderList|r loaded. /col to toggle.")
@@ -1626,6 +1765,19 @@ SlashCmdList["COL"] = function(msg)
         print("|cFFFFCC00COL:|r Window position reset.")
     elseif lmsg:sub(1, 7) == "import " then
         COL:ImportList(msg:sub(8))   -- COH-010: pass original case
+    elseif lmsg == "minimap" then   -- COH-017
+        COL.settings.minimapHidden = not COL.settings.minimapHidden
+        if COL.minimapButton then
+            if COL.settings.minimapHidden then
+                COL.minimapButton:Hide()
+            else
+                COL.minimapButton:Show()
+            end
+        end
+        if COL_HideMinimapCheck then
+            COL_HideMinimapCheck:SetChecked(COL.settings.minimapHidden)
+        end
+        print("|cFFFFCC00COL:|r Minimap button " .. (COL.settings.minimapHidden and "hidden." or "shown."))
     elseif lmsg == "help" then
         print("|cFFFFCC00Craft Order List commands:|r")
         print("  /col — Toggle the materials window")
@@ -1633,6 +1785,7 @@ SlashCmdList["COL"] = function(msg)
         print("  /col hide — Hide the materials window")
         print("  /col clear — Clear the shopping list")
         print("  /col reset — Reset window position")
+        print("  /col minimap — Toggle minimap button visibility")
         print("  /col import <string> — Restore a material list from export")
         print("  /col help — Show this help message")
     else
