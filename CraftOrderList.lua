@@ -129,34 +129,73 @@ local SOURCE_SORT_ORDER = {
 local SUBTYPE_SOURCE_MAP = {
     -- Herbalism
     ["Herb"]            = SOURCE.GATHERED,
+    ["草药"]            = SOURCE.GATHERED,   -- zhCN/zhTW
     -- Mining
     ["Metal & Stone"]   = SOURCE.GATHERED,
+    ["金属和矿石"]      = SOURCE.GATHERED,   -- zhCN
+    ["金屬及石頭"]      = SOURCE.GATHERED,   -- zhTW
     -- Skinning / Leatherworking inputs
     ["Leather"]         = SOURCE.GATHERED,
+    ["皮革"]            = SOURCE.GATHERED,   -- zhCN/zhTW
     ["Cloth"]           = SOURCE.GATHERED,
+    ["布料"]            = SOURCE.GATHERED,   -- zhCN/zhTW
     -- Misc gathered
     ["Elemental"]       = SOURCE.GATHERED,
+    ["元素"]            = SOURCE.GATHERED,   -- zhCN/zhTW
     ["Fish"]            = SOURCE.GATHERED,
+    ["鱼"]              = SOURCE.GATHERED,   -- zhCN
+    ["魚"]              = SOURCE.GATHERED,   -- zhTW
     ["Meat"]            = SOURCE.GATHERED,
+    ["肉类"]            = SOURCE.GATHERED,   -- zhCN
+    ["肉類"]            = SOURCE.GATHERED,   -- zhTW
     ["Cooking"]         = SOURCE.GATHERED,
+    ["烹饪材料"]        = SOURCE.GATHERED,   -- zhCN
+    ["烹飪材料"]        = SOURCE.GATHERED,   -- zhTW
     -- Crafted by professions
     ["Parts"]           = SOURCE.CRAFTED,
+    ["零件"]            = SOURCE.CRAFTED,    -- zhCN/zhTW
     ["Jewelcrafting"]   = SOURCE.CRAFTED,
+    ["珠宝"]            = SOURCE.CRAFTED,    -- zhCN
+    ["珠寶"]            = SOURCE.CRAFTED,    -- zhTW
     ["Enchanting"]      = SOURCE.CRAFTED,
+    ["附魔"]            = SOURCE.CRAFTED,    -- zhCN/zhTW
     ["Devices"]         = SOURCE.CRAFTED,
+    ["装置"]            = SOURCE.CRAFTED,    -- zhCN
+    ["裝置"]            = SOURCE.CRAFTED,    -- zhTW
     ["Reagents"]        = SOURCE.CRAFTED,
+    ["试剂"]            = SOURCE.CRAFTED,    -- zhCN
+    ["試劑"]            = SOURCE.CRAFTED,    -- zhTW
     ["Alchemy"]         = SOURCE.CRAFTED,
+    ["炼金"]            = SOURCE.CRAFTED,    -- zhCN
+    ["鍊金"]            = SOURCE.CRAFTED,    -- zhTW
     ["Inscription"]     = SOURCE.CRAFTED,
+    ["铭文"]            = SOURCE.CRAFTED,    -- zhCN
+    ["銘文"]            = SOURCE.CRAFTED,    -- zhTW
     ["Leatherworking"]  = SOURCE.CRAFTED,
+    ["皮甲制作"]        = SOURCE.CRAFTED,    -- zhCN
+    ["皮甲製作"]        = SOURCE.CRAFTED,    -- zhTW
     ["Mining"]          = SOURCE.CRAFTED,
+    ["采矿"]            = SOURCE.CRAFTED,    -- zhCN
+    ["採礦"]            = SOURCE.CRAFTED,    -- zhTW
     ["Blacksmithing"]   = SOURCE.CRAFTED,
+    ["锻造"]            = SOURCE.CRAFTED,    -- zhCN
+    ["鍛造"]            = SOURCE.CRAFTED,    -- zhTW
     ["Tailoring"]       = SOURCE.CRAFTED,
+    ["裁缝"]            = SOURCE.CRAFTED,    -- zhCN
+    ["裁縫"]            = SOURCE.CRAFTED,    -- zhTW
     ["Engineering"]     = SOURCE.CRAFTED,
+    ["工程学"]          = SOURCE.CRAFTED,    -- zhCN
+    ["工程學"]          = SOURCE.CRAFTED,    -- zhTW
     -- Vendor
     ["Junk"]            = SOURCE.VENDOR,
+    ["垃圾"]            = SOURCE.VENDOR,     -- zhCN/zhTW
     -- Fallback
     ["Miscellaneous"]   = SOURCE.OTHER,
+    ["杂项"]            = SOURCE.OTHER,      -- zhCN
+    ["雜項"]            = SOURCE.OTHER,      -- zhTW
     ["Trade Goods"]     = SOURCE.OTHER,
+    ["商业物品"]        = SOURCE.OTHER,      -- zhCN
+    ["商業物品"]        = SOURCE.OTHER,      -- zhTW
 }
 
 local function GetReagentSource(itemID)
@@ -1727,7 +1766,9 @@ local function SetupCraftingOrderButton()
     end
 
     local function UpdateVisibility()
-        if frame.Form and frame.Form:IsVisible() then
+        -- Fall back to the parent frame's own visibility when Form is absent or
+        -- has a different structure (e.g. zhCN/zhTW client builds).
+        if frame:IsVisible() and (not frame.Form or frame.Form:IsVisible()) then
             PositionButton()
             btn:Show()
         else
