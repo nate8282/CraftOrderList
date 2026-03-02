@@ -66,10 +66,12 @@ read_globals = {
     "COL_RecentDropdown",      -- COH-008
     -- COH-009: screen notification frame
     "UIErrorsFrame",
-    -- COH-016/017/018: new named frames
+    -- COH-016/017/018 + auto-load + auto-close: new named frames
     "COL_CopyBox",
     "COL_HideMinimapCheck",
     "COL_AHDockCheck",
+    "COL_AutoLoadCheck",
+    "COL_AutoCloseCheck",
     "COL_SettingsFrame",
 
     -- Dropdown API
@@ -114,10 +116,12 @@ files["spec/**"] = {
         "BINDING_HEADER_CRAFTORDERLIST",
         "BINDING_NAME_COLTOGGLEMAIN",
         "BINDING_NAME_COLSEARCHNEXT",
-        -- COH-016/017/018: new named frames
+        -- COH-016/017/018 + auto-load + auto-close: new named frames
         "COL_CopyBox",
         "COL_HideMinimapCheck",
         "COL_AHDockCheck",
+        "COL_AutoLoadCheck",
+        "COL_AutoCloseCheck",
         "COL_SettingsFrame",
     },
     ignore = {
@@ -160,10 +164,12 @@ files["tests/**"] = {
         "BINDING_HEADER_CRAFTORDERLIST",
         "BINDING_NAME_COLTOGGLEMAIN",
         "BINDING_NAME_COLSEARCHNEXT",
-        -- COH-016/017/018: new named frames
+        -- COH-016/017/018 + auto-load + auto-close: new named frames
         "COL_CopyBox",
         "COL_HideMinimapCheck",
         "COL_AHDockCheck",
+        "COL_AutoLoadCheck",
+        "COL_AutoCloseCheck",
         "COL_SettingsFrame",
     },
     ignore = { "211", "212", "213", "311" },

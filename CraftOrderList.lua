@@ -31,8 +31,10 @@ COL.settings = {
     sortBy        = "name",
     craftCount    = 1,
     framePos      = nil,
-    minimapHidden = false,   -- COH-017
-    ahAutoDock    = true,    -- COH-018
+    minimapHidden    = false,   -- COH-017
+    ahAutoDock       = true,    -- COH-018
+    autoOpenOnRecipe  = true,   -- auto-open COL when a recipe is selected
+    autoCloseOnRecipe = false,  -- auto-close COL when the recipe window closes
 }
 
 -- COH-009: one-shot completion notification flag (reset on each new list load)
@@ -324,6 +326,28 @@ local function GetProgressInfo()
 end
 
 -- ============================================================================
+-- Helpers
+-- ============================================================================
+
+-- Returns the recipe ID currently shown in any open professions/order window.
+-- Only reads from a window that is currently visible; stale transactions linger
+-- on hidden frames and would return the wrong recipe ID.
+local function GetCurrentRecipeID()
+    if ProfessionsCustomerOrdersFrame and ProfessionsCustomerOrdersFrame:IsShown()
+       and ProfessionsCustomerOrdersFrame.Form
+       and ProfessionsCustomerOrdersFrame.Form.transaction then
+        return ProfessionsCustomerOrdersFrame.Form.transaction.recipeID
+    end
+    if ProfessionsFrame and ProfessionsFrame:IsShown()
+       and ProfessionsFrame.CraftingPage
+       and ProfessionsFrame.CraftingPage.SchematicForm
+       and ProfessionsFrame.CraftingPage.SchematicForm.transaction then
+        return ProfessionsFrame.CraftingPage.SchematicForm.transaction.recipeID
+    end
+    return nil
+end
+
+-- ============================================================================
 -- Main Frame UI
 -- ============================================================================
 
@@ -332,8 +356,9 @@ local function CreateMainFrame()
 
     -- COH-008: Recent row added at y=-68; all controls below shift down 34px. Frame 460->494.
     -- COH-016/018: Frame widened to 400px to fit 6 bottom buttons (Export + Import).
+    -- Get Materials button (7th): Frame widened to 500px; 7 buttons × ~66px avg + 6×4 gaps = 484px usable.
     local frame = CreateFrame("Frame", "COL_MainFrame", UIParent, "BackdropTemplate")
-    frame:SetSize(400, 494)
+    frame:SetSize(540, 494)
     frame:SetPoint("CENTER", UIParent, "CENTER", 400, 0)
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -406,7 +431,7 @@ local function CreateMainFrame()
     -- Recipe name (y ~ -38, unchanged)
     local recipeName = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     recipeName:SetPoint("TOPLEFT", titleBar, "BOTTOMLEFT", 8, -6)
-    recipeName:SetPoint("RIGHT", -8, 0)
+    recipeName:SetPoint("RIGHT", frame, "RIGHT", -8, 0)
     recipeName:SetHeight(14)
     recipeName:SetJustifyH("LEFT")
     frame.recipeName = recipeName
@@ -592,7 +617,7 @@ local function CreateMainFrame()
     scrollFrame:SetPoint("BOTTOMRIGHT", -28, 60)
 
     local content = CreateFrame("Frame", nil, scrollFrame)
-    content:SetWidth(364)
+    content:SetWidth(504)
     content:SetHeight(1)
     scrollFrame:SetScrollChild(content)
     frame.content     = content
@@ -606,12 +631,65 @@ local function CreateMainFrame()
     summary:SetTextColor(0.7, 0.7, 0.7)
     frame.summary = summary
 
-    -- Bottom buttons (COH-016: Import added; frame widened to 400px)
-    -- Total: 55+4+55+4+55+4+86+4+57+4+56 = 384px (exact usable width at 400px frame)
+    -- Bottom buttons — width is auto-sized to text + 16px padding so every button
+    -- has the same internal spacing regardless of label length.
+    local function SizeBtn(btn)
+        local fs = btn:GetFontString()
+        if fs then btn:SetWidth(fs:GetStringWidth() + 16) end
+    end
+
+    -- Get Materials button: loads the recipe currently open in the crafting window
+    local getMatsBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    getMatsBtn:SetHeight(22)
+    getMatsBtn:SetPoint("BOTTOMLEFT", 8, 8)
+    getMatsBtn:SetText("Get Materials")
+    SizeBtn(getMatsBtn)
+    getMatsBtn:SetScript("OnClick", function()
+        local recipeID = GetCurrentRecipeID()
+        if recipeID then
+            local addToExisting = #COL.materialList > 0
+            if BuildMaterialList(recipeID, addToExisting) then
+                COL:UpdateMainFrame()
+                if addToExisting then
+                    print("|cFFFFCC00COL:|r Added to material list.")
+                else
+                    print("|cFFFFCC00COL:|r Material list ready!")
+                end
+            else
+                print("|cFFFFCC00COL:|r No basic materials found.")
+            end
+        else
+            print("|cFFFFCC00COL:|r No recipe selected in the crafting window.")
+        end
+    end)
+    getMatsBtn:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:SetText("Get Materials", 1, 1, 1)
+        GameTooltip:AddLine("Load the recipe currently open in the crafting window.", 0.7, 0.7, 0.7, true)
+        GameTooltip:Show()
+    end)
+    getMatsBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local searchNextBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    searchNextBtn:SetHeight(22)
+    searchNextBtn:SetPoint("LEFT", getMatsBtn, "RIGHT", 4, 0)
+    searchNextBtn:SetText("Search Next")
+    SizeBtn(searchNextBtn)
+    searchNextBtn:SetScript("OnClick", function() COL:SearchNextMaterial() end)
+    searchNextBtn:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:SetText("Search Next Material", 1, 1, 1)
+        GameTooltip:AddLine("Searches the AH for the next material you still need.", 0.7, 0.7, 0.7, true)
+        GameTooltip:Show()
+    end)
+    searchNextBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    frame.searchNextBtn = searchNextBtn
+
     local clearBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    clearBtn:SetSize(55, 22)
-    clearBtn:SetPoint("BOTTOMLEFT", 8, 8)
+    clearBtn:SetHeight(22)
+    clearBtn:SetPoint("LEFT", searchNextBtn, "RIGHT", 4, 0)
     clearBtn:SetText("Clear")
+    SizeBtn(clearBtn)
     clearBtn.confirmPending = false
     clearBtn:SetScript("OnClick", function(self)
         if self.confirmPending then
@@ -622,13 +700,16 @@ local function CreateMainFrame()
             COL:UpdateMainFrame()
             self.confirmPending = false
             self:SetText("Clear")
+            SizeBtn(self)
         else
             self.confirmPending = true
             self:SetText("Confirm?")
+            SizeBtn(self)
             C_Timer.After(3, function()
                 if self.confirmPending then
                     self.confirmPending = false
                     self:SetText("Clear")
+                    SizeBtn(self)
                 end
             end)
         end
@@ -641,23 +722,11 @@ local function CreateMainFrame()
     end)
     clearBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    local copyBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    copyBtn:SetSize(55, 22)
-    copyBtn:SetPoint("LEFT", clearBtn, "RIGHT", 4, 0)
-    copyBtn:SetText("Copy")
-    copyBtn:SetScript("OnClick", function() COL:CopyListToChat() end)
-    copyBtn:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:SetText("Copy to Chat", 1, 1, 1)
-        GameTooltip:AddLine("Copy missing materials to chat or clipboard.", 0.7, 0.7, 0.7, true)
-        GameTooltip:Show()
-    end)
-    copyBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
-
     local uncheckBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    uncheckBtn:SetSize(55, 22)
-    uncheckBtn:SetPoint("LEFT", copyBtn, "RIGHT", 4, 0)
+    uncheckBtn:SetHeight(22)
+    uncheckBtn:SetPoint("LEFT", clearBtn, "RIGHT", 4, 0)
     uncheckBtn:SetText("Reset")
+    SizeBtn(uncheckBtn)
     uncheckBtn:SetScript("OnClick", function()
         for _, mat in ipairs(COL.materialList) do
             mat.manualCheck = false
@@ -673,25 +742,26 @@ local function CreateMainFrame()
     end)
     uncheckBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    local searchNextBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    searchNextBtn:SetSize(86, 22)
-    searchNextBtn:SetPoint("LEFT", uncheckBtn, "RIGHT", 4, 0)
-    searchNextBtn:SetText("Search Next")
-    searchNextBtn:SetScript("OnClick", function() COL:SearchNextMaterial() end)
-    searchNextBtn:SetScript("OnEnter", function(self)
+    local copyBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    copyBtn:SetHeight(22)
+    copyBtn:SetPoint("LEFT", uncheckBtn, "RIGHT", 4, 0)
+    copyBtn:SetText("Copy")
+    SizeBtn(copyBtn)
+    copyBtn:SetScript("OnClick", function() COL:CopyListToChat() end)
+    copyBtn:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:SetText("Search Next Material", 1, 1, 1)
-        GameTooltip:AddLine("Searches the AH for the next material you still need.", 0.7, 0.7, 0.7, true)
+        GameTooltip:SetText("Copy to Chat", 1, 1, 1)
+        GameTooltip:AddLine("Copy missing materials to chat or clipboard.", 0.7, 0.7, 0.7, true)
         GameTooltip:Show()
     end)
-    searchNextBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    frame.searchNextBtn = searchNextBtn
+    copyBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     -- COH-010/016: Export + Import buttons
     local exportBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    exportBtn:SetSize(57, 22)
-    exportBtn:SetPoint("LEFT", searchNextBtn, "RIGHT", 4, 0)
+    exportBtn:SetHeight(22)
+    exportBtn:SetPoint("LEFT", copyBtn, "RIGHT", 4, 0)
     exportBtn:SetText("Export")
+    SizeBtn(exportBtn)
     exportBtn:SetScript("OnClick", function() COL:ExportList() end)
     exportBtn:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
@@ -703,9 +773,10 @@ local function CreateMainFrame()
 
     -- COH-016: Import button
     local importBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    importBtn:SetSize(56, 22)
+    importBtn:SetHeight(22)
     importBtn:SetPoint("LEFT", exportBtn, "RIGHT", 4, 0)
     importBtn:SetText("Import")
+    SizeBtn(importBtn)
     importBtn:SetScript("OnClick", function() COL:ShowImportDialog() end)
     importBtn:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
@@ -714,6 +785,16 @@ local function CreateMainFrame()
         GameTooltip:Show()
     end)
     importBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    -- Remove from UISpecialFrames when hidden so stale escape registrations don't linger
+    frame:SetScript("OnHide", function()
+        for i, name in ipairs(UISpecialFrames) do
+            if name == "COL_MainFrame" then
+                tremove(UISpecialFrames, i)
+                return
+            end
+        end
+    end)
 
     frame:Hide()
     COL.mainFrame = frame
@@ -726,7 +807,7 @@ end
 
 local function CreateSettingsPanel()
     local sf = CreateFrame("Frame", "COL_SettingsFrame", COL.mainFrame, "BackdropTemplate")
-    sf:SetSize(220, 90)
+    sf:SetSize(220, 142)
     sf:SetPoint("TOPLEFT", COL.mainFrame, "TOPRIGHT", 5, 0)
     sf:SetFrameStrata("HIGH")
     sf:SetClampedToScreen(true)
@@ -778,6 +859,26 @@ local function CreateSettingsPanel()
     ahDockCheck.text:SetTextColor(0.7, 0.7, 0.7)
     ahDockCheck:SetScript("OnClick", function(self)
         COL.settings.ahAutoDock = self:GetChecked()
+    end)
+
+    -- Auto-load selected recipe toggle
+    local autoLoadCheck = CreateFrame("CheckButton", "COL_AutoLoadCheck", sf, "UICheckButtonTemplate")
+    autoLoadCheck:SetSize(24, 24)
+    autoLoadCheck:SetPoint("TOPLEFT", sf, "TOPLEFT", 8, -78)
+    autoLoadCheck.text:SetText("Auto-load selected recipe")
+    autoLoadCheck.text:SetTextColor(0.7, 0.7, 0.7)
+    autoLoadCheck:SetScript("OnClick", function(self)
+        COL.settings.autoOpenOnRecipe = self:GetChecked()
+    end)
+
+    -- Auto-close with recipe window toggle
+    local autoCloseCheck = CreateFrame("CheckButton", "COL_AutoCloseCheck", sf, "UICheckButtonTemplate")
+    autoCloseCheck:SetSize(24, 24)
+    autoCloseCheck:SetPoint("TOPLEFT", sf, "TOPLEFT", 8, -104)
+    autoCloseCheck.text:SetText("Close with recipe window")
+    autoCloseCheck.text:SetTextColor(0.7, 0.7, 0.7)
+    autoCloseCheck:SetScript("OnClick", function(self)
+        COL.settings.autoCloseOnRecipe = self:GetChecked()
     end)
 
     sf:Hide()
@@ -1066,7 +1167,7 @@ function COL:UpdateMainFrame()
             frame.summary:SetTextColor(0.7, 0.7, 0.7)
         end
     else
-        frame.summary:SetText("Click 'Get Materials List' on a recipe")
+        frame.summary:SetText("Click 'Get Materials' in a recipe window to load the list")
         frame.summary:SetTextColor(unpack(COLORS.dim))
     end
 
@@ -1308,6 +1409,52 @@ function COL:DockToAuctionHouse()
     COL.mainFrame:SetPoint("TOPLEFT", AuctionHouseFrame, "TOPRIGHT", 5, 0)
 end
 
+function COL:DockToProfessionsFrame()
+    if not COL.mainFrame or not ProfessionsFrame then return end
+    if not COL.settings.autoOpenOnRecipe then return end
+    -- Always snap next to the frame when auto-open is active; no framePos guard.
+    COL.mainFrame:ClearAllPoints()
+    COL.mainFrame:SetPoint("TOPLEFT", ProfessionsFrame, "TOPRIGHT", 5, 0)
+end
+
+function COL:DockToCraftingOrdersFrame()
+    if not COL.mainFrame or not ProfessionsCustomerOrdersFrame then return end
+    if not COL.settings.autoOpenOnRecipe then return end
+    COL.mainFrame:ClearAllPoints()
+    COL.mainFrame:SetPoint("TOPLEFT", ProfessionsCustomerOrdersFrame, "TOPRIGHT", 5, 0)
+end
+
+-- Transiently register COL_MainFrame in UISpecialFrames so the next Escape press
+-- closes it. Called when a recipe window closes while COL is still visible.
+local function RegisterCOLForEscape()
+    if not COL.mainFrame or not COL.mainFrame:IsShown() then return end
+    for _, name in ipairs(UISpecialFrames) do
+        if name == "COL_MainFrame" then return end
+    end
+    tinsert(UISpecialFrames, "COL_MainFrame")
+end
+
+local function UnregisterCOLFromEscape()
+    for i, name in ipairs(UISpecialFrames) do
+        if name == "COL_MainFrame" then
+            tremove(UISpecialFrames, i)
+            return
+        end
+    end
+end
+
+-- Called when either recipe window closes (used by both TRADE_SKILL_CLOSE and
+-- ProfessionsCustomerOrdersFrame OnHide).
+local function OnRecipeWindowClosed()
+    if not COL.mainFrame or not COL.mainFrame:IsShown() then return end
+    if COL.settings.autoCloseOnRecipe then
+        COL.mainFrame:Hide()
+    else
+        -- Let the next Escape press close COL without requiring the mouse.
+        RegisterCOLForEscape()
+    end
+end
+
 -- ============================================================================
 -- Minimap Button
 -- ============================================================================
@@ -1440,17 +1587,90 @@ end
 local function SetupProfessionsButton()
     if not ProfessionsFrame or not ProfessionsFrame.CraftingPage then return end
     local craftingPage = ProfessionsFrame.CraftingPage
-    if not craftingPage.CreateAllButton then return end
 
     local btn = CreateGetMaterialsButton(craftingPage, function()
         if craftingPage.SchematicForm and craftingPage.SchematicForm.transaction then
-            return craftingPage.SchematicForm.transaction:GetRecipeID()
+            return craftingPage.SchematicForm.transaction.recipeID
         end
         return nil
     end)
 
     if btn then
-        btn:SetPoint("RIGHT", craftingPage.CreateAllButton, "LEFT", -5, 0)
+        if craftingPage.CreateAllButton then
+            btn:SetPoint("RIGHT", craftingPage.CreateAllButton, "LEFT", -5, 0)
+        elseif craftingPage.CreateButton then
+            btn:SetPoint("RIGHT", craftingPage.CreateButton, "LEFT", -5, 0)
+        else
+            btn:SetPoint("BOTTOMLEFT", craftingPage, "BOTTOMLEFT", 10, 10)
+        end
+    end
+end
+
+-- Hooks SchematicForm.Init so that selecting a recipe can auto-open COL.
+-- Safe to call multiple times; installs the hook only once.
+local recipeHookInstalled = false
+local function HookRecipeSelection()
+    if recipeHookInstalled then return end
+    if not ProfessionsFrame or not ProfessionsFrame.CraftingPage
+       or not ProfessionsFrame.CraftingPage.SchematicForm then return end
+    recipeHookInstalled = true
+    hooksecurefunc(ProfessionsFrame.CraftingPage.SchematicForm, "Init", function(self, transaction)
+        if not COL.settings.autoOpenOnRecipe then return end
+        if not transaction then return end
+        if transaction.recipeID then
+            -- Show and dock only; user manually loads materials with Get Materials.
+            COL:ShowFrame()
+            COL:DockToProfessionsFrame()
+        end
+    end)
+end
+
+-- Hooks the customer crafting-order form for auto-open.
+-- Tries Form.Init (same RecipeInfo pattern as SchematicForm).
+-- Falls back to OnShow of the whole window if Init is unavailable.
+-- Also handles the race condition where the frame is already visible when the hook is installed.
+local craftingOrderHookInstalled = false
+local function HookCraftingOrderWindow()
+    if craftingOrderHookInstalled then return end
+    if not ProfessionsCustomerOrdersFrame then return end
+    craftingOrderHookInstalled = true
+
+    -- Hook recipe selection for per-recipe granularity (if Form.Init is available)
+    local form = ProfessionsCustomerOrdersFrame.Form
+    if form and form.Init then
+        hooksecurefunc(form, "Init", function(self, transaction)
+            if not COL.settings.autoOpenOnRecipe then return end
+            if not transaction then return end
+            if transaction.recipeID then
+                -- Show and dock only; user manually loads materials with Get Materials.
+                COL:ShowFrame()
+                COL:DockToCraftingOrdersFrame()
+            end
+        end)
+    end
+
+    -- Always hook OnShow so COL re-docks every time the window is opened or reopened.
+    -- This mirrors how TRADE_SKILL_SHOW handles the normal crafting window.
+    ProfessionsCustomerOrdersFrame:HookScript("OnShow", function()
+        if not COL.settings.autoOpenOnRecipe then return end
+        COL:ShowFrame()
+        COL:DockToCraftingOrdersFrame()
+    end)
+
+    -- Hook OnHide so closing this window triggers auto-close or escape registration,
+    -- mirroring the TRADE_SKILL_CLOSE handler used for the professions crafting window.
+    -- Deferred via C_Timer.After(0) so it fires on the next frame update, AFTER the
+    -- current Escape key event is fully processed — otherwise OnHide fires synchronously
+    -- mid-Escape and COL ends up added to UISpecialFrames in the same pass that just
+    -- closed this window, causing both windows to close on a single Escape press.
+    ProfessionsCustomerOrdersFrame:HookScript("OnHide", function()
+        C_Timer.After(0, OnRecipeWindowClosed)
+    end)
+
+    -- Race condition guard: frame may already be visible by the time we install the hook
+    if ProfessionsCustomerOrdersFrame:IsShown() and COL.settings.autoOpenOnRecipe then
+        COL:ShowFrame()
+        COL:DockToCraftingOrdersFrame()
     end
 end
 
@@ -1469,7 +1689,7 @@ local function SetupCraftingOrderButton()
 
     local function GetRecipeID()
         if frame.Form and frame.Form.transaction then
-            return frame.Form.transaction:GetRecipeID()
+            return frame.Form.transaction.recipeID
         end
         return nil
     end
@@ -1581,8 +1801,10 @@ local function LoadSettings()
     if type(COL.settings.hideCompleted) ~= "boolean" then
         COL.settings.hideCompleted = false
     end
-    if type(COL.settings.minimapHidden) ~= "boolean" then COL.settings.minimapHidden = false end
-    if type(COL.settings.ahAutoDock)    ~= "boolean" then COL.settings.ahAutoDock    = true  end
+    if type(COL.settings.minimapHidden)    ~= "boolean" then COL.settings.minimapHidden    = false end
+    if type(COL.settings.ahAutoDock)       ~= "boolean" then COL.settings.ahAutoDock       = true  end
+    if type(COL.settings.autoOpenOnRecipe)  ~= "boolean" then COL.settings.autoOpenOnRecipe  = true  end
+    if type(COL.settings.autoCloseOnRecipe) ~= "boolean" then COL.settings.autoCloseOnRecipe = false end
 
     if COL_SavedData.materialList and #COL_SavedData.materialList > 0 then
         COL.materialList = COL_SavedData.materialList
@@ -1604,8 +1826,10 @@ local function SaveSettings()
             craftCount     = COL.settings.craftCount,
             framePos       = COL.settings.framePos,
             minimapAngle   = COL.settings.minimapAngle,
-            minimapHidden  = COL.settings.minimapHidden,   -- COH-017
-            ahAutoDock     = COL.settings.ahAutoDock,      -- COH-018
+            minimapHidden    = COL.settings.minimapHidden,
+            ahAutoDock       = COL.settings.ahAutoDock,
+            autoOpenOnRecipe  = COL.settings.autoOpenOnRecipe,
+            autoCloseOnRecipe = COL.settings.autoCloseOnRecipe,
         },
         materialList  = COL.materialList,
         recipeName    = COL.recipeName,
@@ -1641,6 +1865,12 @@ local function ApplySettings()
     if COL_AHDockCheck then
         COL_AHDockCheck:SetChecked(COL.settings.ahAutoDock)
     end
+    if COL_AutoLoadCheck then
+        COL_AutoLoadCheck:SetChecked(COL.settings.autoOpenOnRecipe)
+    end
+    if COL_AutoCloseCheck then
+        COL_AutoCloseCheck:SetChecked(COL.settings.autoCloseOnRecipe)
+    end
     -- COH-017: apply minimap visibility
     if COL.minimapButton then
         if COL.settings.minimapHidden then
@@ -1659,6 +1889,7 @@ local bagUpdatePending = false
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
 eventFrame:RegisterEvent("TRADE_SKILL_SHOW")
+eventFrame:RegisterEvent("TRADE_SKILL_CLOSE")
 eventFrame:RegisterEvent("AUCTION_HOUSE_SHOW")
 eventFrame:RegisterEvent("BAG_UPDATE")
 eventFrame:RegisterEvent("BAG_UPDATE_DELAYED")
@@ -1681,14 +1912,24 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
             print("|cFFFFCC00CraftOrderList|r loaded. /col to toggle.")
         elseif loadedAddon == "Blizzard_Professions" then
             C_Timer.After(0.1, SetupProfessionsButton)
+            C_Timer.After(0.1, HookRecipeSelection)
         elseif loadedAddon == "Blizzard_ProfessionsCustomerOrders" then
             C_Timer.After(0.1, SetupCraftingOrderButton)
+            C_Timer.After(0.1, HookCraftingOrderWindow)
         elseif loadedAddon == "Blizzard_AuctionHouseUI" then
             C_Timer.After(0.1, SetupAuctionHouseToggle)
         end
 
     elseif event == "TRADE_SKILL_SHOW" then
         SetupProfessionsButton()
+        HookRecipeSelection()
+        if COL.settings.autoOpenOnRecipe and #COL.materialList > 0 then
+            COL:ShowFrame()
+            COL:DockToProfessionsFrame()
+        end
+
+    elseif event == "TRADE_SKILL_CLOSE" then
+        OnRecipeWindowClosed()
 
     elseif event == "AUCTION_HOUSE_SHOW" then
         SetupAuctionHouseToggle()
@@ -1699,6 +1940,7 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
 
     elseif event == "CRAFTINGORDERS_CAN_REQUEST" then
         C_Timer.After(0.2, SetupCraftingOrderButton)
+        C_Timer.After(0.2, HookCraftingOrderWindow)
 
     elseif event == "BAG_UPDATE" or event == "BAG_UPDATE_DELAYED"
         or event == "MAIL_INBOX_UPDATE" or event == "TRADE_ACCEPT_UPDATE" then

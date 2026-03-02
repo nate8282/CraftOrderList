@@ -2,7 +2,7 @@
 ## Title: Craft Order List
 ## Notes: Visual shopping list for crafting materials. Shows what you need, what you have, and lets you search the AH.
 ## Author: Nate8282
-## Version: 1.3.0
+## Version: 1.4.0
 ## SavedVariables: COL_SavedData
 
 CraftOrderList.lua
