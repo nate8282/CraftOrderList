@@ -20,16 +20,13 @@ jobs:
           sudo apt-get install -y lua5.3 liblua5.3-dev luarocks
           sudo luarocks install busted
 
-      - name: Run busted tests (capture output)
-        run: busted --verbose > busted-output.txt 2>&1 || true
-      - name: Upload test output
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: busted-output
-          path: busted-output.txt
       - name: Run busted tests
-        run: busted --verbose
+        run: |
+          busted --verbose 2>&1 | tee /tmp/busted.txt; exit_code=${PIPESTATUS[0]}
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat /tmp/busted.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          exit $exit_code
 
   legacy-test:
     runs-on: ubuntu-latest
