@@ -179,6 +179,17 @@ function CreateAtlasMarkup(atlas, height, width)
     return "|A:" .. atlas .. ":" .. (height or 0) .. ":" .. (width or 0) .. "|a"
 end
 
+-- WoW Lua globals (aliases present in WoW's Lua 5.1 runtime)
+tinsert = table.insert
+tremove = table.remove
+function hooksecurefunc(tbl, name, hook)
+    local orig = tbl[name]
+    tbl[name] = function(...)
+        if orig then orig(...) end
+        hook(...)
+    end
+end
+
 -- System stubs
 C_Timer = {
     After = function(_, f) f() end,

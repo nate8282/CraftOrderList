@@ -87,6 +87,9 @@ read_globals = {
     -- Utility
     "C_Timer",
     "CreateAtlasMarkup",
+    "hooksecurefunc",
+    "tinsert",
+    "tremove",
     "strsplit",
     "strtrim",
 }
@@ -106,6 +109,7 @@ files["spec/**"] = {
         "UIDropDownMenu_SetText", "UIDropDownMenu_CreateInfo",
         "UIDropDownMenu_AddButton",
         "strsplit", "strtrim", "CreateAtlasMarkup",
+        "hooksecurefunc", "tinsert", "tremove",
         "C_Timer", "C_AddOns", "SlashCmdList",
         "COL_SavedData", "MockData",
         -- COH-008/009/015: new globals set by addon at load time
@@ -154,6 +158,7 @@ files["tests/**"] = {
         "UIDropDownMenu_SetText", "UIDropDownMenu_CreateInfo",
         "UIDropDownMenu_AddButton",
         "strsplit", "strtrim", "CreateAtlasMarkup",
+        "hooksecurefunc", "tinsert", "tremove",
         "C_Timer", "C_AddOns", "SlashCmdList",
         "COL_SavedData",
         -- COH-008/009/015: new globals set by addon at load time

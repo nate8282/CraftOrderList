@@ -59,6 +59,7 @@ local function mockFrame(name)
     f.IsShown = function() return false end
     f.IsVisible = function() return false end
     f.GetWidth = function() return 300 end
+    f.GetStringWidth = function() return 50 end
     f.GetHeight = function() return 400 end
     f.GetCenter = function() return 400, 300 end
     f.GetPoint = function() return "CENTER", nil, "CENTER", 0, 0 end
@@ -109,6 +110,26 @@ string.trim = function(s) return strtrim(s) end
 function CreateAtlasMarkup(atlas, height, width)
     return "|A:" .. atlas .. ":" .. (height or 0) .. ":" .. (width or 0) .. "|a"
 end
+
+-- WoW Lua globals
+tinsert = table.insert
+tremove = table.remove
+function hooksecurefunc(tbl, name, hook)
+    local orig = tbl[name]
+    tbl[name] = function(...)
+        if orig then orig(...) end
+        hook(...)
+    end
+end
+
+-- Missing mocks for newer addon features
+UIErrorsFrame = { AddMessage = function() end }
+ProfessionsFrame = nil
+ProfessionsCustomerOrdersFrame = nil
+AuctionHouseFrame = nil
+function GetProfessions() return 1, 2, nil, nil, nil end
+function GetProfessionInfo(i) return "Profession", 0, 100, 100, 0, 0, i, 0, 0, 0, "Profession" end
+C_Item.GetItemInfoInstant = function(itemID) return itemID, "Trade Goods", "Miscellaneous" end
 
 -- Load addon (pass addon name and namespace table, simulating WoW's vararg loader)
 print("Loading CraftOrderList...")

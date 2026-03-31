@@ -1520,15 +1520,6 @@ local function RegisterCOLForEscape()
     tinsert(UISpecialFrames, "COL_MainFrame")
 end
 
-local function UnregisterCOLFromEscape()
-    for i, name in ipairs(UISpecialFrames) do
-        if name == "COL_MainFrame" then
-            tremove(UISpecialFrames, i)
-            return
-        end
-    end
-end
-
 -- Called when either recipe window closes (used by both TRADE_SKILL_CLOSE and
 -- ProfessionsCustomerOrdersFrame OnHide).
 local function OnRecipeWindowClosed()
