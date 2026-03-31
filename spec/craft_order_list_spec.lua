@@ -173,6 +173,7 @@ describe("CraftOrderList", function()
             local captured = nil
             COL.editBox = {
                 SetText       = function(_, s) captured = s end,
+                SetScript     = function() end,
                 Show          = function() end,
                 HighlightText = function() end,
                 SetFocus      = function() end,
