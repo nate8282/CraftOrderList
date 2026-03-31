@@ -19,6 +19,11 @@ local MockData = {
 -- Frame mock with chainable method stubs
 -- __index returns a callable table so f.Foo returns something that is both
 -- indexable (f.Text:SetPoint works) and callable (f:SetPoint() works).
+-- Common methods shared by all child mock objects so that chained calls
+-- like btn:GetFontString():GetStringWidth() return sensible values.
+local childMethods = {
+    GetStringWidth = function() return 50 end,
+}
 local frameMT
 frameMT = {
     __index = function(t, k)
@@ -26,6 +31,7 @@ frameMT = {
         local child = setmetatable({}, {
             __call = function() return t end,
             __index = function(_, k2)
+                if childMethods[k2] then return childMethods[k2] end
                 return function() return t end
             end,
         })

@@ -22,12 +22,16 @@ local function assertNotNil(a) assert(a ~= nil, "Expected non-nil") end
 local function assertTrue(a) assert(a, "Expected true") end
 
 -- Frame mock (returns callable+indexable sub-objects for chaining)
+local childMethods = {
+    GetStringWidth = function() return 50 end,
+}
 local frameMT
 frameMT = {
     __index = function(t, k)
         local child = setmetatable({}, {
             __call = function() return t end,
             __index = function(_, k2)
+                if childMethods[k2] then return childMethods[k2] end
                 return function() return t end
             end,
         })
