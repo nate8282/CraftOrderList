@@ -1538,41 +1538,41 @@ end
 
 local function CreateMinimapButton()
     local btn = CreateFrame("Button", "COL_MinimapButton", Minimap)
-    btn:SetSize(36, 36)
+    btn:SetSize(31, 31)
     btn:SetFrameStrata("MEDIUM")
     btn:SetFrameLevel(8)
     btn:RegisterForDrag("LeftButton")
 
     local overlay = btn:CreateTexture(nil, "OVERLAY")
-    overlay:SetSize(56, 56)
+    overlay:SetSize(50, 50)
     overlay:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
     overlay:SetPoint("TOPLEFT", 0, 0)
 
     local iconBg = btn:CreateTexture(nil, "BACKGROUND", nil, -1)
-    iconBg:SetSize(28, 28)
-    iconBg:SetPoint("CENTER", overlay, "TOPLEFT", 18, -18)
+    iconBg:SetSize(20, 20)
+    iconBg:SetPoint("CENTER", overlay, "TOPLEFT", 16, -16)
     iconBg:SetColorTexture(0, 0, 0, 1)
 
     local bgMask = btn:CreateMaskTexture()
-    bgMask:SetSize(28, 28)
-    bgMask:SetPoint("CENTER", overlay, "TOPLEFT", 18, -18)
+    bgMask:SetSize(20, 20)
+    bgMask:SetPoint("CENTER", overlay, "TOPLEFT", 16, -16)
     bgMask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
     iconBg:AddMaskTexture(bgMask)
 
     local icon = btn:CreateTexture(nil, "BACKGROUND")
-    icon:SetSize(28, 28)
-    icon:SetPoint("CENTER", overlay, "TOPLEFT", 18, -18)
+    icon:SetSize(20, 20)
+    icon:SetPoint("CENTER", overlay, "TOPLEFT", 16, -16)
     icon:SetTexture("Interface\\AddOns\\CraftOrderList\\Icon")
 
     local mask = btn:CreateMaskTexture()
-    mask:SetSize(28, 28)
-    mask:SetPoint("CENTER", overlay, "TOPLEFT", 18, -18)
+    mask:SetSize(20, 20)
+    mask:SetPoint("CENTER", overlay, "TOPLEFT", 16, -16)
     mask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
     icon:AddMaskTexture(mask)
 
     local highlight = btn:CreateTexture(nil, "HIGHLIGHT")
-    highlight:SetSize(28, 28)
-    highlight:SetPoint("CENTER", overlay, "TOPLEFT", 18, -18)
+    highlight:SetSize(20, 20)
+    highlight:SetPoint("CENTER", overlay, "TOPLEFT", 16, -16)
     highlight:SetTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
     highlight:SetBlendMode("ADD")
 
@@ -1580,9 +1580,11 @@ local function CreateMinimapButton()
 
     local angle = COL.settings.minimapAngle or 220
     local function UpdatePosition()
-        local rad = math.rad(angle)
-        local x   = math.cos(rad) * 80
-        local y   = math.sin(rad) * 80
+        local rad    = math.rad(angle)
+        local radius = (Minimap:GetWidth() / 2) + 10
+        local x      = math.cos(rad) * radius
+        local y      = math.sin(rad) * radius
+        btn:ClearAllPoints()
         btn:SetPoint("CENTER", Minimap, "CENTER", x, y)
     end
 
