@@ -388,6 +388,34 @@ local function GetCurrentRecipeID()
             return id
         end
     end
+    -- Crafting Orders tab (crafter fulfilling orders from other players).
+    -- OrderView.OrderDetails.SchematicForm holds the recipe for the viewed order.
+    -- Also try OrderView.order.spellID as fallback (order.recipeID is nil in-game).
+    if ProfessionsFrame and ProfessionsFrame:IsShown()
+       and ProfessionsFrame.OrdersPage
+       and ProfessionsFrame.OrdersPage.OrderView
+       and ProfessionsFrame.OrdersPage.OrderView:IsVisible() then
+        local details = ProfessionsFrame.OrdersPage.OrderView.OrderDetails
+        if details and details.SchematicForm
+           and details.SchematicForm.transaction then
+            local id = details.SchematicForm.transaction.recipeID
+            if id and C_TradeSkillUI.GetRecipeInfo(id) then
+                return id
+            end
+            id = details.SchematicForm.transaction.spellID
+            if id and C_TradeSkillUI.GetRecipeInfo(id) then
+                return id
+            end
+        end
+        -- Fallback: order object on the OrderView itself
+        local order = ProfessionsFrame.OrdersPage.OrderView.order
+        if order then
+            local id = order.spellID
+            if id and C_TradeSkillUI.GetRecipeInfo(id) then
+                return id
+            end
+        end
+    end
     -- Guard IsVisible(): SchematicForm.transaction persists after the window is closed
     -- and reopened. Without the visibility check, clicking Get Materials with no recipe
     -- actively selected would read the stale transaction and rebuild the old list.
@@ -1596,76 +1624,8 @@ local function CreateMinimapButton()
 end
 
 -- ============================================================================
--- Integration Buttons
+-- Integration Hooks
 -- ============================================================================
-
-local function CreateGetMaterialsButton(parent, getRecipeFunc)
-    local parentName = parent:GetName() or ("COL_Anon_" .. tostring(parent))
-    local buttonName = parentName .. "_COL_Btn"
-
-    if COL.buttonsCreated[buttonName] then return COL.buttonsCreated[buttonName] end
-
-    local btn = CreateFrame("Button", buttonName, parent, "UIPanelButtonTemplate")
-    btn:SetHeight(22)
-    btn:SetText("Get Materials List")
-    SizeBtn(btn)
-    btn:SetScript("OnClick", function()
-        local recipeID = getRecipeFunc()
-        if recipeID then
-            local addToExisting = #COL.materialList > 0
-            if BuildMaterialList(recipeID, addToExisting) then
-                COL:ShowFrame()
-                if addToExisting then
-                    print("|cFFFFCC00COL:|r Added to material list.")
-                else
-                    print("|cFFFFCC00COL:|r Material list ready!")
-                end
-            else
-                print("|cFFFFCC00COL:|r No basic materials found.")
-            end
-        else
-            print("|cFFFFCC00COL:|r No recipe selected.")
-        end
-    end)
-    btn:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText("Get Materials List", 1, 1, 1)
-        if #COL.materialList > 0 then
-            GameTooltip:AddLine("Adds to existing list", 0.7, 0.7, 0.7)
-        else
-            GameTooltip:AddLine("Creates new shopping list", 0.7, 0.7, 0.7)
-        end
-        GameTooltip:Show()
-    end)
-    btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
-
-    COL.buttonsCreated[buttonName] = btn
-    return btn
-end
-
-local function SetupProfessionsButton()
-    if not ProfessionsFrame or not ProfessionsFrame.CraftingPage then return end
-    local craftingPage = ProfessionsFrame.CraftingPage
-
-    local btn = CreateGetMaterialsButton(craftingPage, function()
-        -- IsVisible() guards against stale transactions that persist after close/reopen.
-        if craftingPage.SchematicForm and craftingPage.SchematicForm:IsVisible()
-           and craftingPage.SchematicForm.transaction then
-            return craftingPage.SchematicForm.transaction.recipeID
-        end
-        return nil
-    end)
-
-    if btn then
-        if craftingPage.CreateAllButton then
-            btn:SetPoint("RIGHT", craftingPage.CreateAllButton, "LEFT", -5, 0)
-        elseif craftingPage.CreateButton then
-            btn:SetPoint("RIGHT", craftingPage.CreateButton, "LEFT", -5, 0)
-        else
-            btn:SetPoint("BOTTOMLEFT", craftingPage, "BOTTOMLEFT", 10, 10)
-        end
-    end
-end
 
 -- Hooks SchematicForm.Init so that selecting a recipe can auto-open COL.
 -- Safe to call multiple times; installs the hook only once.
@@ -1735,75 +1695,39 @@ local function HookCraftingOrderWindow()
     end
 end
 
-local function SetupCraftingOrderButton()
-    if not ProfessionsCustomerOrdersFrame then return end
-    local frame      = ProfessionsCustomerOrdersFrame
-    local buttonName = "COL_CraftingOrderButton"
 
-    if COL.buttonsCreated[buttonName] then return end
+-- ============================================================================
+-- Crafting Orders Tab (crafter browsing/fulfilling orders)
+-- ============================================================================
 
-    local btn = CreateFrame("Button", buttonName, frame, "UIPanelButtonTemplate")
-    btn:SetHeight(22)
-    btn:SetText("Get Materials List")
-    SizeBtn(btn)
-    btn:SetFrameStrata("HIGH")
-    btn:SetFrameLevel(100)
 
-    btn:SetScript("OnClick", function()
-        -- Use the module-level GetCurrentRecipeID which validates transaction.recipeID
-        -- and falls back to transaction.spellID for zhCN/zhTW clients.
-        local recipeID = GetCurrentRecipeID()
-        if recipeID then
-            local addToExisting = #COL.materialList > 0
-            if BuildMaterialList(recipeID, addToExisting) then
+local ordersPageHookInstalled = false
+local function HookOrdersPage()
+    if ordersPageHookInstalled then return end
+    if not ProfessionsFrame or not ProfessionsFrame.OrdersPage then return end
+    local orderView = ProfessionsFrame.OrdersPage.OrderView
+    if not orderView then return end
+    ordersPageHookInstalled = true
+
+    -- Hook the OrderDetails SchematicForm.Init for auto-open when an order is selected.
+    local details = orderView.OrderDetails
+    if details and details.SchematicForm and details.SchematicForm.Init then
+        hooksecurefunc(details.SchematicForm, "Init", function(self, transaction)
+            if not COL.settings.autoOpenOnRecipe then return end
+            if not transaction then return end
+            if transaction.recipeID or transaction.spellID then
                 COL:ShowFrame()
-                if addToExisting then
-                    print("|cFFFFCC00COL:|r Added to material list.")
-                else
-                    print("|cFFFFCC00COL:|r Material list ready!")
-                end
+                COL:DockToProfessionsFrame()
             end
-        end
+        end)
+    end
+
+    -- Also hook OrderView OnShow so COL docks whenever an order detail view opens.
+    orderView:HookScript("OnShow", function()
+        if not COL.settings.autoOpenOnRecipe then return end
+        COL:ShowFrame()
+        COL:DockToProfessionsFrame()
     end)
-
-    btn:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText("Get Materials List", 1, 1, 1)
-        if #COL.materialList > 0 then
-            GameTooltip:AddLine("Adds to existing list", 0.7, 0.7, 0.7)
-        else
-            GameTooltip:AddLine("Creates new shopping list", 0.7, 0.7, 0.7)
-        end
-        GameTooltip:Show()
-    end)
-    btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
-
-    local function PositionButton()
-        btn:ClearAllPoints()
-        btn:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -15, 5)
-    end
-
-    local function UpdateVisibility()
-        -- Show whenever the patron orders window itself is visible.
-        -- Removed the frame.Form:IsVisible() guard — in zhCN/zhTW builds
-        -- Form exists but does not report IsVisible() when a recipe is shown,
-        -- which caused the button to always stay hidden on those clients.
-        if frame:IsVisible() then
-            PositionButton()
-            btn:Show()
-        else
-            btn:Hide()
-        end
-    end
-
-    frame:HookScript("OnShow", function() C_Timer.After(0.1, UpdateVisibility) end)
-    frame:HookScript("OnHide", function() btn:Hide() end)
-    if frame.Form then
-        frame.Form:HookScript("OnShow", function() C_Timer.After(0.1, UpdateVisibility) end)
-    end
-
-    C_Timer.After(0.2, UpdateVisibility)
-    COL.buttonsCreated[buttonName] = true
 end
 
 local function SetupAuctionHouseToggle()
@@ -1990,18 +1914,17 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
             COL:UpdateMainFrame()
             print("|cFFFFCC00CraftOrderList|r loaded. /col to toggle.")
         elseif loadedAddon == "Blizzard_Professions" then
-            C_Timer.After(0.1, SetupProfessionsButton)
             C_Timer.After(0.1, HookRecipeSelection)
+            C_Timer.After(0.1, HookOrdersPage)
         elseif loadedAddon == "Blizzard_ProfessionsCustomerOrders" then
-            C_Timer.After(0.1, SetupCraftingOrderButton)
             C_Timer.After(0.1, HookCraftingOrderWindow)
         elseif loadedAddon == "Blizzard_AuctionHouseUI" then
             C_Timer.After(0.1, SetupAuctionHouseToggle)
         end
 
     elseif event == "TRADE_SKILL_SHOW" then
-        SetupProfessionsButton()
         HookRecipeSelection()
+        HookOrdersPage()
         if COL.settings.autoOpenOnRecipe and #COL.materialList > 0 then
             COL:ShowFrame()
             COL:DockToProfessionsFrame()
@@ -2018,7 +1941,6 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
         end
 
     elseif event == "CRAFTINGORDERS_CAN_REQUEST" then
-        C_Timer.After(0.2, SetupCraftingOrderButton)
         C_Timer.After(0.2, HookCraftingOrderWindow)
 
     elseif event == "BAG_UPDATE" or event == "BAG_UPDATE_DELAYED"

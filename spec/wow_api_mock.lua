@@ -61,6 +61,7 @@ local function mockFrame(frameName)
     f.IsShown = function() return false end
     f.IsVisible = function() return false end
     f.GetWidth = function() return 300 end
+    f.GetStringWidth = function() return 50 end
     f.GetHeight = function() return 400 end
     f.GetCenter = function() return 400, 300 end
     f.GetPoint = function() return "CENTER", nil, "CENTER", 0, 0 end
