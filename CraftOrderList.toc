@@ -1,8 +1,8 @@
-## Interface: 120001
+## Interface: 120005
 ## Title: Craft Order List
 ## Notes: Visual shopping list for crafting materials. Shows what you need, what you have, and lets you search the AH.
 ## Author: Nate8282
-## Version: 1.4.5
+## Version: 1.4.6
 ## SavedVariables: COL_SavedData
 
 CraftOrderList.lua
