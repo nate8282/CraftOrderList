@@ -2,7 +2,7 @@ name: Auto-update WoW interface version
 
 on:
   schedule:
-    - cron: '*/5 * * * *'  # Every 5 minutes — minimum GitHub interval, public repo so free
+    - cron: '7 4 * * *'  # Daily at 04:07 UTC (prime minute, off-peak). Manual `workflow_dispatch` on patch day catches new versions immediately.
   workflow_dispatch:         # Allow manual trigger from the Actions tab
 
 concurrency:
